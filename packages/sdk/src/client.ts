@@ -7,20 +7,19 @@ import type {
   AttestationData,
   AttestationResult,
 } from "@skillscope/shared";
-import { createDb, schema } from "./db/index.js";
+import { createDb, schema, type DbConnection } from "./db/index.js";
 import { hashFile, hashContent } from "./hasher.js";
 import { wrapExecution } from "./wrapper.js";
 import { scoreExecution } from "./scorer.js";
 import { syncExecutions } from "./sync.js";
 import { attestOnchain } from "./attest.js";
-import type { Hex } from "viem";
-import type Database from "better-sqlite3";
 
 export class SkillScope {
-  private db: BetterSQLite3Database<typeof schema>;
-  private sqlite: Database.Database;
+  private conn: DbConnection;
   private config: SkillScopeConfig;
   private syncInterval: ReturnType<typeof setInterval> | null = null;
+
+  private get db() { return this.conn.db; }
 
   constructor(config: SkillScopeConfig) {
     this.config = {
@@ -32,9 +31,7 @@ export class SkillScope {
       ...config,
     };
 
-    const { db, sqlite } = createDb(this.config.dbPath!);
-    this.db = db;
-    this.sqlite = sqlite;
+    this.conn = createDb(this.config.dbPath!);
 
     if (this.config.autoSync && this.config.dashboardUrl) {
       this.startAutoSync();
@@ -284,7 +281,7 @@ export class SkillScope {
       clearInterval(this.syncInterval);
       this.syncInterval = null;
     }
-    this.sqlite.close();
+    this.conn.sqlite.close();
   }
 
   private startAutoSync(): void {

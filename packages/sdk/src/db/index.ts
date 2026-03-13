@@ -1,12 +1,16 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import Database, { type Database as DatabaseType } from "better-sqlite3";
+import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import * as schema from "./schema.js";
 
-export function createDb(dbPath: string) {
+export interface DbConnection {
+  db: BetterSQLite3Database<typeof schema>;
+  sqlite: DatabaseType;
+}
+
+export function createDb(dbPath: string): DbConnection {
   const sqlite = new Database(dbPath);
   sqlite.pragma("journal_mode = WAL");
 
-  // Auto-create tables
   sqlite.exec(`
     CREATE TABLE IF NOT EXISTS executions (
       id TEXT PRIMARY KEY,
