@@ -16,17 +16,23 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-[hsl(var(--border))] bg-[hsl(var(--background))]">
-      <div className="flex h-16 items-center gap-3 border-b border-[hsl(var(--border))] px-6">
-        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center">
-          <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-[hsla(240,5%,18%,0.5)] bg-[hsla(240,10%,4%,0.85)] backdrop-blur-xl">
+      {/* Dot grid overlay */}
+      <div className="absolute inset-0 dot-grid opacity-40 pointer-events-none" />
+
+      <div className="relative flex h-16 items-center gap-3 border-b border-[hsla(240,5%,18%,0.5)] px-6">
+        <div className="h-9 w-9 rounded-xl bg-brand-gradient flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <svg className="h-4.5 w-4.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
         </div>
-        <span className="text-lg font-bold tracking-tight">SkillScope</span>
+        <span className="text-lg font-display font-bold tracking-tight gradient-text">SkillScope</span>
       </div>
 
-      <nav className="mt-4 space-y-1 px-3">
+      <nav className="relative mt-6 space-y-1 px-3">
+        <p className="px-3 mb-3 text-[10px] font-semibold uppercase tracking-widest text-[hsl(var(--muted-foreground))]">
+          Navigation
+        </p>
         {navItems.map((item) => {
           const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
           return (
@@ -34,27 +40,42 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
                 isActive
-                  ? "bg-brand-500/10 text-brand-400"
-                  : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--foreground))]"
+                  ? "bg-brand-500/10 text-white shadow-sm"
+                  : "text-[hsl(var(--muted-foreground))] hover:bg-[hsla(240,5%,14%,0.5)] hover:text-white"
               )}
             >
-              <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d={item.icon} />
-              </svg>
+              <div className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-lg transition-all",
+                isActive
+                  ? "bg-brand-gradient shadow-md shadow-brand-500/25"
+                  : "bg-[hsla(240,5%,14%,0.5)] group-hover:bg-[hsla(240,5%,18%,0.5)]"
+              )}>
+                <svg className={cn("h-4 w-4", isActive ? "text-white" : "text-[hsl(var(--muted-foreground))] group-hover:text-white")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={item.icon} />
+                </svg>
+              </div>
               {item.label}
+              {isActive && (
+                <div className="ml-auto h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/50" />
+              )}
             </Link>
           );
         })}
       </nav>
 
-      <div className="absolute bottom-0 left-0 right-0 border-t border-[hsl(var(--border))] p-4">
-        <div className="rounded-lg bg-brand-500/5 border border-brand-500/10 p-3">
-          <p className="text-xs font-medium text-brand-400">Onchain Verified</p>
-          <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
-            Agents that Trust — powered by Base
-          </p>
+      <div className="absolute bottom-0 left-0 right-0 border-t border-[hsla(240,5%,18%,0.5)] p-4">
+        <div className="relative overflow-hidden rounded-xl bg-brand-gradient p-[1px]">
+          <div className="rounded-[11px] bg-[hsl(240,10%,5%)] p-3.5">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/50 animate-glow-pulse" />
+              <p className="text-xs font-semibold text-white">Onchain Verified</p>
+            </div>
+            <p className="mt-1.5 text-[11px] leading-relaxed text-[hsl(var(--muted-foreground))]">
+              Agents that Trust — powered by Base
+            </p>
+          </div>
         </div>
       </div>
     </aside>

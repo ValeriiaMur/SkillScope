@@ -1,9 +1,9 @@
 import { eq } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import type { SyncPayload, SyncResponse } from "@skillscope/shared";
 import * as schema from "./db/schema.js";
 
-type DB = BetterSQLite3Database<typeof schema>;
+type DB = LibSQLDatabase<typeof schema>;
 
 export async function syncExecutions(
   db: DB,
@@ -12,7 +12,7 @@ export async function syncExecutions(
   projectName?: string
 ): Promise<SyncResponse> {
   // Get unsynced executions
-  const unsynced = db
+  const unsynced = await db
     .select()
     .from(schema.executions)
     .where(eq(schema.executions.synced, false))
@@ -23,7 +23,7 @@ export async function syncExecutions(
   }
 
   // Get all skill meta
-  const meta = db.select().from(schema.skillMeta).all();
+  const meta = await db.select().from(schema.skillMeta).all();
 
   const payload: SyncPayload = {
     projectId,
@@ -56,7 +56,7 @@ export async function syncExecutions(
   if (result.received > 0) {
     const ids = unsynced.map((e) => e.id);
     for (const id of ids) {
-      db.update(schema.executions)
+      await db.update(schema.executions)
         .set({ synced: true })
         .where(eq(schema.executions.id, id))
         .run();

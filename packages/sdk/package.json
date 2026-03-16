@@ -17,15 +17,15 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@skillscope/shared": "workspace:*",
-    "better-sqlite3": "^11.7.0",
-    "drizzle-orm": "^0.38.0",
     "@anthropic-ai/sdk": "^0.39.0",
-    "viem": "^2.21.0",
-    "uuid": "^11.0.0"
+    "@libsql/client": "^0.14.0",
+    "@skillscope/shared": "workspace:*",
+    "drizzle-orm": "^0.38.0",
+    "uuid": "^11.0.0",
+    "viem": "^2.21.0"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.19.15",
     "@types/uuid": "^10.0.0",
     "tsup": "^8.3.0",
     "typescript": "^5.7.0"

@@ -3,33 +3,37 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { formatScore } from "@skillscope/shared";
 import { Sparkline } from "@skillscope/ui";
+import { ShimmerBadge } from "@/components/ShimmerBadge";
 
 interface Props {
   skills: any[];
 }
 
+const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.05 } } };
+const fadeUp = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 30 } } };
+
 export function SkillsClient({ skills }: Props) {
   return (
-    <div>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        <h1 className="text-2xl font-bold tracking-tight">Skills</h1>
-        <p className="mt-1 text-[hsl(var(--muted-foreground))]">
+    <motion.div variants={stagger} initial="hidden" animate="show">
+      <motion.div variants={fadeUp}>
+        <h1 className="text-3xl font-bold font-display tracking-tight">Skills</h1>
+        <p className="mt-1.5 text-[hsl(var(--muted-foreground))]">
           All tracked agent skills and their performance
         </p>
       </motion.div>
 
-      <div className="card mt-8">
+      <motion.div variants={fadeUp} className="glass-card mt-8">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="data-table">
             <thead>
-              <tr className="border-b border-[hsl(var(--border))]">
-                <th className="pb-3 text-left font-medium text-[hsl(var(--muted-foreground))]">Skill Name</th>
-                <th className="pb-3 text-left font-medium text-[hsl(var(--muted-foreground))]">Executions</th>
-                <th className="pb-3 text-left font-medium text-[hsl(var(--muted-foreground))]">Success Rate</th>
-                <th className="pb-3 text-left font-medium text-[hsl(var(--muted-foreground))]">Avg Score</th>
-                <th className="pb-3 text-left font-medium text-[hsl(var(--muted-foreground))]">Avg Duration</th>
-                <th className="pb-3 text-left font-medium text-[hsl(var(--muted-foreground))]">Trend</th>
-                <th className="pb-3 text-left font-medium text-[hsl(var(--muted-foreground))]">Attested</th>
+              <tr>
+                <th>Skill Name</th>
+                <th>Executions</th>
+                <th>Success Rate</th>
+                <th>Avg Score</th>
+                <th>Avg Duration</th>
+                <th>Trend</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -41,35 +45,42 @@ export function SkillsClient({ skills }: Props) {
                 return (
                   <motion.tr
                     key={skill.skill_name}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="border-b border-[hsl(var(--border))]/50 hover:bg-[hsl(var(--accent))]/50 transition-colors"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.04 }}
                   >
-                    <td className="py-3">
+                    <td>
                       <Link
                         href={`/skills/${encodeURIComponent(skill.skill_name)}`}
-                        className="font-medium text-brand-400 hover:text-brand-300"
+                        className="font-semibold gradient-text hover:opacity-80 transition-opacity"
                       >
                         {skill.skill_name}
                       </Link>
                     </td>
-                    <td className="py-3">{skill.total_executions}</td>
-                    <td className="py-3">
-                      <span className={successRate >= 80 ? "text-emerald-400" : successRate >= 50 ? "text-yellow-400" : "text-red-400"}>
-                        {successRate}%
-                      </span>
+                    <td className="font-mono">{skill.total_executions}</td>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 w-16 rounded-full bg-[hsla(240,5%,18%,0.5)]">
+                          <div
+                            className={`h-full rounded-full ${
+                              successRate >= 80 ? "bg-emerald-400" : successRate >= 50 ? "bg-yellow-400" : "bg-red-400"
+                            }`}
+                            style={{ width: `${successRate}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-mono">{successRate}%</span>
+                      </div>
                     </td>
-                    <td className="py-3 font-medium">{formatScore(skill.avg_score)}</td>
-                    <td className="py-3 text-[hsl(var(--muted-foreground))]">{skill.avg_duration ? `${skill.avg_duration}ms` : "—"}</td>
-                    <td className="py-3">
-                      <Sparkline data={[65, 72, 68, 80, skill.avg_score || 70]} />
+                    <td className="font-semibold font-mono">{formatScore(skill.avg_score)}</td>
+                    <td className="text-[hsl(var(--muted-foreground))] font-mono">{skill.avg_duration ? `${skill.avg_duration}ms` : "—"}</td>
+                    <td>
+                      <Sparkline data={[65, 72, 68, 80, skill.avg_score || 70]} color="#8b5cf6" />
                     </td>
-                    <td className="py-3">
+                    <td>
                       {skill.attestation_count > 0 ? (
-                        <span className="badge badge-attested">Verified</span>
+                        <ShimmerBadge>Verified</ShimmerBadge>
                       ) : (
-                        <span className="text-[hsl(var(--muted-foreground))]">—</span>
+                        <span className="text-xs text-[hsl(var(--muted-foreground))]">Unverified</span>
                       )}
                     </td>
                   </motion.tr>
@@ -77,7 +88,7 @@ export function SkillsClient({ skills }: Props) {
               })}
               {skills.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-[hsl(var(--muted-foreground))]">
+                  <td colSpan={7} className="py-12 text-center text-[hsl(var(--muted-foreground))]">
                     No skills tracked yet. Sync data from the SDK to get started.
                   </td>
                 </tr>
@@ -85,7 +96,7 @@ export function SkillsClient({ skills }: Props) {
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

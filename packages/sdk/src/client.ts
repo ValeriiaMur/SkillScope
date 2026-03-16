@@ -1,5 +1,4 @@
-import { eq, sql, desc, and } from "drizzle-orm";
-import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import { eq, desc } from "drizzle-orm";
 import type {
   SkillScopeConfig,
   SkillExecution,
@@ -7,7 +6,7 @@ import type {
   AttestationData,
   AttestationResult,
 } from "@skillscope/shared";
-import { createDb, schema, type DbConnection } from "./db/index.js";
+import { createDb, initTables, schema, type DbConnection } from "./db/index.js";
 import { hashFile, hashContent } from "./hasher.js";
 import { wrapExecution } from "./wrapper.js";
 import { scoreExecution } from "./scorer.js";
@@ -18,6 +17,7 @@ export class SkillScope {
   private conn: DbConnection;
   private config: SkillScopeConfig;
   private syncInterval: ReturnType<typeof setInterval> | null = null;
+  private initialized: Promise<void>;
 
   private get db() { return this.conn.db; }
 
@@ -32,34 +32,40 @@ export class SkillScope {
     };
 
     this.conn = createDb(this.config.dbPath!);
+    this.initialized = initTables(this.conn);
 
     if (this.config.autoSync && this.config.dashboardUrl) {
       this.startAutoSync();
     }
   }
 
+  private async ensureInit(): Promise<void> {
+    await this.initialized;
+  }
+
   /**
    * Register a skill by file path or content.
    */
-  registerSkill(
+  async registerSkill(
     skillName: string,
     filePathOrContent: string,
     description?: string
-  ): string {
+  ): Promise<string> {
+    await this.ensureInit();
     const isFile = filePathOrContent.endsWith(".md") || filePathOrContent.includes("/");
     const hash = isFile
       ? hashFile(filePathOrContent)
       : hashContent(filePathOrContent);
 
     const now = new Date().toISOString();
-    const existing = this.db
+    const existing = await this.db
       .select()
       .from(schema.skillMeta)
       .where(eq(schema.skillMeta.skillName, skillName))
       .get();
 
     if (existing) {
-      this.db
+      await this.db
         .update(schema.skillMeta)
         .set({
           skillFileHash: hash,
@@ -70,7 +76,7 @@ export class SkillScope {
         .where(eq(schema.skillMeta.skillName, skillName))
         .run();
     } else {
-      this.db
+      await this.db
         .insert(schema.skillMeta)
         .values({
           skillName,
@@ -94,7 +100,8 @@ export class SkillScope {
     fn: (input: string) => Promise<T>
   ): (input: string) => Promise<T> {
     return async (input: string): Promise<T> => {
-      const meta = this.db
+      await this.ensureInit();
+      const meta = await this.db
         .select()
         .from(schema.skillMeta)
         .where(eq(schema.skillMeta.skillName, skillName))
@@ -135,7 +142,7 @@ export class SkillScope {
       }
 
       // Save execution
-      this.db
+      await this.db
         .insert(schema.executions)
         .values({
           ...execution,
@@ -155,8 +162,9 @@ export class SkillScope {
   /**
    * Record an execution manually.
    */
-  recordExecution(execution: SkillExecution): void {
-    this.db
+  async recordExecution(execution: SkillExecution): Promise<void> {
+    await this.ensureInit();
+    await this.db
       .insert(schema.executions)
       .values({
         ...execution,
@@ -169,8 +177,9 @@ export class SkillScope {
   /**
    * Get stats for a specific skill.
    */
-  getSkillStats(skillName: string): SkillStats | null {
-    const rows = this.db
+  async getSkillStats(skillName: string): Promise<SkillStats | null> {
+    await this.ensureInit();
+    const rows = await this.db
       .select()
       .from(schema.executions)
       .where(eq(schema.executions.skillName, skillName))
@@ -208,7 +217,8 @@ export class SkillScope {
   /**
    * Get all executions, optionally filtered by skill.
    */
-  getExecutions(skillName?: string, limit = 100): SkillExecution[] {
+  async getExecutions(skillName?: string, limit = 100): Promise<SkillExecution[]> {
+    await this.ensureInit();
     const query = skillName
       ? this.db
           .select()
@@ -222,7 +232,8 @@ export class SkillScope {
           .orderBy(desc(schema.executions.timestamp))
           .limit(limit);
 
-    return query.all().map((e) => ({
+    const results = await query.all();
+    return results.map((e) => ({
       ...e,
       success: Boolean(e.success),
       synced: Boolean(e.synced),
@@ -233,6 +244,7 @@ export class SkillScope {
    * Sync local data to dashboard.
    */
   async sync(): Promise<{ received: number; errors: string[] }> {
+    await this.ensureInit();
     if (!this.config.dashboardUrl) {
       throw new Error("dashboardUrl not configured");
     }
@@ -252,7 +264,7 @@ export class SkillScope {
       throw new Error("Contract address and private key required for attestation");
     }
 
-    const stats = this.getSkillStats(skillName);
+    const stats = await this.getSkillStats(skillName);
     if (!stats || stats.avgQualityScore === null) {
       throw new Error(`No scored executions found for skill "${skillName}"`);
     }
