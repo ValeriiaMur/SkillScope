@@ -13,7 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-const DASHBOARD_URL = process.env.DASHBOARD_URL || "http://localhost:3000";
+const DASHBOARD_URL = process.env.DASHBOARD_URL || "http://localhost:3333";
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 

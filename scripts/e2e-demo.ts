@@ -4,13 +4,13 @@
  * Run: npx tsx scripts/e2e-demo.ts
  *
  * Prerequisites:
- *   1. Dashboard running at http://localhost:3000 (pnpm --filter dashboard dev)
+ *   1. Dashboard running at http://localhost:3333 (pnpm --filter dashboard dev)
  *   2. Set env vars: ANTHROPIC_API_KEY, CONTRACT_ADDRESS, PRIVATE_KEY
  */
 import { SkillScope } from "@skillscope/sdk";
 import path from "node:path";
 
-const DASHBOARD_URL = process.env.DASHBOARD_URL || "http://localhost:3000";
+const DASHBOARD_URL = process.env.DASHBOARD_URL || "http://localhost:3333";
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
